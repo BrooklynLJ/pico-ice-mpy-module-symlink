@@ -2,15 +2,23 @@ add_library(ice-module INTERFACE)
 
 include(${CMAKE_CURRENT_LIST_DIR}/pico-ice-sdk/cmake/preinit_pico_ice_sdk.cmake)
 
+set(PICO_SDK_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/pico-ice-sdk)
+
 target_sources(ice-module INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/ice_module.c
+    ${PICO_SDK_DIRECTORY}/src/ice_fpga.c
+    ${PICO_SDK_DIRECTORY}/src/ice_flash.c
+    ${PICO_SDK_DIRECTORY}/src/ice_cram.c
+    ${CMAKE_CURRENT_LIST_DIR}/micropython_ice_hal.c
 )
 
 target_include_directories(ice-module INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${PICO_SDK_DIRECTORY}/include
 )
 
-target_link_libraries(usermod INTERFACE ice-module)
+pico_generate_pio_header(ice-module
+    ${CMAKE_CURRENT_LIST_DIR}/ice_cram.pio
+    )
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/pico-ice-sdk pico-ice-sdk)
-target_link_libraries(ice-module INTERFACE pico_ice_sdk)
+target_link_libraries(usermod INTERFACE ice-module)
