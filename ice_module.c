@@ -15,7 +15,7 @@ typedef struct _ice_module_fpga_obj_t {
 } ice_module_fpga_obj_t;
 
 static mp_obj_t ice_module_fpga_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-	enum { ARG_cdone, ARG_clock, ARG_creset, ARG_cram_cs, ARG_cram_mosi, ARG_frequency };
+	enum { ARG_cdone, ARG_clock, ARG_creset, ARG_cram_cs, ARG_cram_mosi, ARG_cram_sck, ARG_frequency };
 
 	static const mp_arg_t allowed_args[] = {
 		{ MP_QSTR_cdone, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
@@ -23,6 +23,7 @@ static mp_obj_t ice_module_fpga_make_new(const mp_obj_type_t *type, size_t n_arg
 		{ MP_QSTR_creset, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
 		{ MP_QSTR_cram_cs, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
 		{ MP_QSTR_cram_mosi, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+		{ MP_QSTR_cram_sck, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
 		{ MP_QSTR_frequency, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 48} },
 	};
 
@@ -50,6 +51,10 @@ static mp_obj_t ice_module_fpga_make_new(const mp_obj_type_t *type, size_t n_arg
 		mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("CRAM MOSI is not a pin"));
 	}
 
+	if (mp_obj_get_type(args[ARG_cram_sck].u_obj) != &machine_pin_type) {
+		mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("CRAM SCK is not a pin"));
+	}
+
 
 	ice_module_fpga_obj_t *self = mp_obj_malloc(ice_module_fpga_obj_t, type);
 
@@ -58,6 +63,7 @@ static mp_obj_t ice_module_fpga_make_new(const mp_obj_type_t *type, size_t n_arg
 	self->fpga.pin_creset = mp_hal_get_pin_obj(args[ARG_creset].u_obj);
 	self->fpga.bus.MISO = mp_hal_get_pin_obj(args[ARG_cram_mosi].u_obj);
 	self->fpga.bus.CS_cram = mp_hal_get_pin_obj(args[ARG_cram_cs].u_obj);
+	self->fpga.bus.SCK = mp_hal_get_pin_obj(args[ARG_cram_sck].u_obj);
 
 	ice_fpga_init(self->fpga, args[ARG_frequency].u_int);
 
