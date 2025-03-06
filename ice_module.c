@@ -12,6 +12,7 @@
 typedef struct _ice_module_fpga_obj_t {
 	mp_obj_base_t base;
 	ice_fpga fpga;
+	int frequency;
 } ice_module_fpga_obj_t;
 
 static mp_obj_t ice_module_fpga_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
@@ -64,8 +65,9 @@ static mp_obj_t ice_module_fpga_make_new(const mp_obj_type_t *type, size_t n_arg
 	self->fpga.bus.MISO = mp_hal_get_pin_obj(args[ARG_cram_mosi].u_obj);
 	self->fpga.bus.CS_cram = mp_hal_get_pin_obj(args[ARG_cram_cs].u_obj);
 	self->fpga.bus.SCK = mp_hal_get_pin_obj(args[ARG_cram_sck].u_obj);
+	self->frequency = args[ARG_frequency].u_int;
 
-	ice_fpga_init(self->fpga, args[ARG_frequency].u_int);
+	ice_fpga_init(self->fpga, self->frequency);
 
     return MP_OBJ_FROM_PTR(self);
 }
@@ -111,13 +113,22 @@ static mp_obj_t ice_module_fpga_cram(mp_obj_t self_in, mp_obj_t file)
 
 	/* send data */
 	if (!ice_cram_open(self->fpga)) {
-		mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("Couldn't open CRAM"));
+		mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Couldn't open CRAM"));
 	}
-	ice_cram_write(data->data, data->len);
+	if (ice_cram_write(data->data, data->len) < 0) {
+		mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Couldn't write CRAM"));
+	}
 	ice_cram_close();
 	return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(ice_module_fpga_cram_obj, ice_module_fpga_cram);
+
+static void ice_module_fpga_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+    ice_module_fpga_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_printf(print, "ice.fpga(cram_sck=%u, cram_mosi=%u, cram_cs=%u, cdone=%u, clock=%u, creset=%u, frequency=%u)",
+			  self->fpga.bus.SCK, self->fpga.bus.MISO, self->fpga.bus.CS_cram, self->fpga.pin_cdone, self->fpga.pin_clock,
+			  self->fpga.pin_creset, self->frequency);
+}
 
 static const mp_rom_map_elem_t ice_module_fpga_dict_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_start), MP_ROM_PTR(&ice_module_fpga_start_obj) },
@@ -131,6 +142,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
     MP_QSTR_fpga,
     MP_TYPE_FLAG_NONE,
     make_new, ice_module_fpga_make_new,
+	print, ice_module_fpga_print,
     locals_dict, &ice_module_fpga_locals_dict
     );
 

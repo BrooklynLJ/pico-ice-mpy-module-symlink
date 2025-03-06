@@ -9,7 +9,7 @@ target_sources(ice-module INTERFACE
     ${PICO_SDK_DIRECTORY}/src/ice_fpga.c
     ${PICO_SDK_DIRECTORY}/src/ice_flash.c
     ${PICO_SDK_DIRECTORY}/src/ice_cram.c
-    ${CMAKE_CURRENT_LIST_DIR}/micropython_ice_hal.c
+    ${PICO_SDK_DIRECTORY}/src/pico-sdk_ice_hal.c
 )
 
 target_include_directories(ice-module INTERFACE
